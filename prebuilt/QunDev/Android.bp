@@ -1,0 +1,20 @@
+// QunDev (com.qundev.qundev) — floating overlay + capture/accessibility utility,
+// integrated as a privileged system app at /system/priv-app/QunDev/.
+//
+// Signed with the platform certificate so SYSTEM_ALERT_WINDOW (the floating
+// overlay) is auto-granted without user interaction. The release APK ships
+// unsigned; Soong signs it here.
+//
+// No privapp-permissions allowlist is required: the app requests only normal /
+// runtime / appop permissions (SYSTEM_ALERT_WINDOW, FOREGROUND_SERVICE*,
+// POST_NOTIFICATIONS, RECEIVE_BOOT_COMPLETED, ACCESS_NETWORK_STATE, INTERNET) —
+// none are signature|privileged.
+android_app_import {
+    name: "QunDev",
+    apk: "QunDev.apk",
+    certificate: "platform",
+    privileged: true,
+    dex_preopt: {
+        enabled: false,
+    },
+}
