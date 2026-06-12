@@ -1,0 +1,6 @@
+id=tissot_susfs_hide
+name=tissot SUSFS hide
+version=v2.1.0-tissot
+versionCode=201000
+author=QunDev
+description=SUSFS root-hiding config for tissot (KernelSU-Next, susfs v2.1.0). Seeds the hide script into /data/adb/post-fs-data.d so it survives and auto-runs on every boot.
