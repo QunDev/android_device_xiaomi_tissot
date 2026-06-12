@@ -20,6 +20,13 @@ $(call inherit-product, vendor/lineage/config/common_full_phone.mk)
 # Inherit from tissot device
 $(call inherit-product, device/xiaomi/tissot/device.mk)
 
+# MindTheGapps (real Google services: Play Store, Play Services, GSF, sync,
+# SetupWizard) embedded at build time. The tree is synced to vendor/gapps via
+# .repo/local_manifests/gapps.xml (gitlab MindTheGapps/vendor_gapps, branch tau =
+# Android 13). arm64 since tissot inherits core_64_bit. -if-exists so the build
+# still works if the gapps tree isn't synced.
+$(call inherit-product-if-exists, vendor/gapps/arm64/arm64-vendor.mk)
+
 # Device identifier. This must come after all inclusions
 PRODUCT_DEVICE := tissot
 PRODUCT_NAME := lineage_tissot
