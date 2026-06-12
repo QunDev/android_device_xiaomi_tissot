@@ -40,5 +40,13 @@ ENABLE_VENDOR_RIL_SERVICE := true
 # Security Patch Level
 VENDOR_SECURITY_PATCH := 2020-05-05
 
+# Allow duplicate sysprop assignments (user build only surfaces this).
+# AOSP core (build/make/core/main.mk) appends `ro.adb.secure=1` for the `user`
+# variant, while LineageOS WITH_ADB_INSECURE appends `ro.adb.secure=0` afterwards
+# to keep adb-on-by-default. With dups allowed, the LAST assignment wins (=0),
+# so adb stays enabled; without this flag post_process_props aborts the user
+# build on the conflicting pair.
+BUILD_BROKEN_DUP_SYSPROP := true
+
 # Inherit the proprietary files
 include vendor/xiaomi/tissot/BoardConfigVendor.mk
