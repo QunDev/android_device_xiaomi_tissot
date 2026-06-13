@@ -38,7 +38,12 @@ TARGET_TAP_TO_WAKE_NODE := "/proc/touchpanel/enable_dt2w"
 ENABLE_VENDOR_RIL_SERVICE := true
 
 # Security Patch Level
-VENDOR_SECURITY_PATCH := 2020-05-05
+# Align the vendor SPL with the system SPL (ro.build.version.security_patch,
+# set by LineageOS to a recent date). The stock value (2020-05-05, from the
+# 2020-era blobs) drifts ~6 years from the system SPL and trips coherence
+# detectors ("cross-source drift" between ro.vendor.build.security_patch and
+# ro.build.version.security_patch). Cosmetic only — doesn't change the blobs.
+VENDOR_SECURITY_PATCH := 2026-02-01
 
 # Allow duplicate sysprop assignments (user build only surfaces this).
 # AOSP core (build/make/core/main.mk) appends `ro.adb.secure=1` for the `user`

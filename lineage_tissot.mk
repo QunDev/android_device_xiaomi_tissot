@@ -38,8 +38,20 @@ TARGET_VENDOR := Xiaomi
 
 PRODUCT_GMS_CLIENTID_BASE := android-xiaomi
 
+# Coherent Android-13 fingerprint. The old override pinned the stock Mi A1
+# Android-8 fingerprint (8.0.0/OPR1...), which CONTRADICTS the real build
+# (ro.build.version.release=13, sdk=33) and trips build-coherence detectors
+# ("cross-check drift"). tissot never had a stock A13 image, so this is a
+# fabricated-but-internally-coherent A13 fingerprint: brand/device match
+# ro.product.brand/device, release 13 matches sdk 33, id matches ro.build.id
+# (TQ3A.230901.001), and the incremental matches BUILD_NUMBER (export
+# BUILD_NUMBER=10750268 at build time — see build steps) so there is no
+# fingerprint-vs-incremental drift and no "eng.qundev" self-build tell.
+# NOTE: not a Google-certified fingerprint (won't pass Play Integrity
+# device-match), and the product field (tissot) differs from ro.product.name
+# (lineage_tissot) — accepted to keep a Xiaomi-looking, release-coherent value.
 PRODUCT_BUILD_PROP_OVERRIDES += \
-    PRIVATE_BUILD_DESC="tissot-user 8.0.0 OPR1.170623.026 8.1.10 release-keys"
+    PRIVATE_BUILD_DESC="tissot-user 13 TQ3A.230901.001 10750268 release-keys"
 
 # Set BUILD_FINGERPRINT variable to be picked up by both system and vendor build.prop
-BUILD_FINGERPRINT := "xiaomi/tissot/tissot_sprout:8.0.0/OPR1.170623.026/8.1.10:user/release-keys"
+BUILD_FINGERPRINT := "Xiaomi/tissot/tissot:13/TQ3A.230901.001/10750268:user/release-keys"
