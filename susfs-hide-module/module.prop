@@ -1,6 +1,6 @@
 id=tissot_susfs_hide
 name=tissot SUSFS hide
-version=v2.2.0-tissot
-versionCode=202000
+version=v2.3.0-tissot
+versionCode=203000
 author=QunDev
-description=SUSFS root-hiding + boot-state prop spoof for tissot (KernelSU-Next, susfs v2.1.0). Hides KSU/modules from apps, spoofs AVC logs, and resetprop-spoofs ro.boot.verifiedbootstate(green)/flash.locked/vbmeta to defeat prop-based bootloader checks. Auto-runs every boot via post-fs-data.d. NOTE: does not defeat hardware TEE key attestation.
+description=SUSFS root-hiding + boot-state prop spoof + custom-ROM-version hiding for tissot (KernelSU-Next, susfs v2.1.0). Hides KSU/modules, spoofs AVC logs, resetprop-spoofs ro.boot.verifiedbootstate(green)/flash.locked/vbmeta, and deletes ro.modversion/ro.lineage.* (custom-ROM mod-version tell). Auto-runs every boot via post-fs-data.d. NOTE: does not defeat hardware TEE key attestation.

@@ -35,4 +35,15 @@ if [ -x "$RP" ]; then
     "$RP" -n ro.boot.veritymode enforcing
     # belt-and-suspenders for #3 (build.prop on disk is already release-keys).
     "$RP" -n ro.build.tags release-keys
+
+    # 4. Custom-ROM "mod version" tell (#1). Detector apps read these via
+    #    SystemProperties reflection and cross-check several sources; the value
+    #    "20.0-...-UNOFFICIAL-tissot" outs the build as a custom ROM. Delete them
+    #    so the reads return empty. main_version.mk also drops them at build time;
+    #    this is the backstop that survives a `repo sync` reverting that file.
+    #    (Side effect: Settings > About shows a blank LineageOS version.)
+    for p in ro.modversion ro.lineage.version ro.lineage.releasetype \
+             ro.lineage.build.version ro.lineage.display.version; do
+        "$RP" --delete "$p"
+    done
 fi
