@@ -24,6 +24,13 @@ ui_print "- Installing ksu_susfs -> $DEST_BIN_DIR/ksu_susfs"
 cp "$MODPATH/tools/ksu_susfs_arm64" "$DEST_BIN_DIR/ksu_susfs"
 chmod 755 "$DEST_BIN_DIR/ksu_susfs"
 
+# 1b. install resetprop CLI (Magisk applet, runs standalone). Needed because
+#     `setprop ro.*` is rejected by init after first set; resetprop writes the
+#     property area directly to spoof ro.boot.* boot-state props (#2).
+ui_print "- Installing resetprop -> $DEST_BIN_DIR/resetprop"
+cp "$MODPATH/tools/resetprop_arm64" "$DEST_BIN_DIR/resetprop"
+chmod 755 "$DEST_BIN_DIR/resetprop"
+
 # 2. seed the hide script into post-fs-data.d (runs every boot)
 ui_print "- Seeding hide script -> $PFDD/00-tissot-susfs-hide.sh"
 mkdir -p "$PFDD"

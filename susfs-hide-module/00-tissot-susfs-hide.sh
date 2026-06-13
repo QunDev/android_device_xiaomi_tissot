@@ -17,3 +17,22 @@ done
 
 # 2. Spoof SELinux AVC denial logs for the ksu domain (hide from logcat scanners).
 $SUSFS enable_avc_log_spoofing 1
+
+# 3. Boot-state prop spoofing (#2: verifiedbootstate=orange -> green).
+#    Apps read these via getprop/__system_property_get; `setprop ro.*` is blocked
+#    by init, so use resetprop (writes the property area directly). /proc/cmdline
+#    is NOT readable by untrusted_app (SELinux proc_cmdline), so no cmdline spoof
+#    is needed — the prop is the only app-visible channel.
+#    LIMIT: this fools prop reads only. Hardware TEE Key Attestation still reports
+#    the true unlocked/unverified state and CANNOT be faked on an unlocked
+#    bootloader — if the detector does key attestation, this will not hide it.
+RP=/data/adb/ksu/bin/resetprop
+if [ -x "$RP" ]; then
+    # -n: set the value without firing property-change triggers/init handlers.
+    "$RP" -n ro.boot.verifiedbootstate green
+    "$RP" -n ro.boot.flash.locked 1
+    "$RP" -n ro.boot.vbmeta.device_state locked
+    "$RP" -n ro.boot.veritymode enforcing
+    # belt-and-suspenders for #3 (build.prop on disk is already release-keys).
+    "$RP" -n ro.build.tags release-keys
+fi
