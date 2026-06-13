@@ -53,5 +53,12 @@ VENDOR_SECURITY_PATCH := 2026-02-01
 # build on the conflicting pair.
 BUILD_BROKEN_DUP_SYSPROP := true
 
+# Emit ro.build.tags=release-keys (instead of dev-keys). This build is inline
+# release-signed with our own private keys (PRODUCT_DEFAULT_DEV_CERTIFICATE ->
+# vendor/lineage-priv/keys/releasekey), so the release-keys tag is accurate and
+# makes ro.build.tags COHERENT with the release-keys fingerprint. Consumed by
+# build/make/core/sysprop.mk (patched). See note there about repo sync.
+TARGET_USES_RELEASE_KEYS_TAG := true
+
 # Inherit the proprietary files
 include vendor/xiaomi/tissot/BoardConfigVendor.mk
