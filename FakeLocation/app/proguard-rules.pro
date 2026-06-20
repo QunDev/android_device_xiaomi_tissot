@@ -1,0 +1,4 @@
+-keep class com.qundev.fakelocation.LocationHook { *; }
+-keep class com.qundev.fakelocation.ConfigActivity { *; }
+-dontwarn de.robv.android.xposed.**
+-keepattributes *Annotation*

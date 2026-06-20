@@ -1,32 +1,23 @@
 # tissot SUSFS hide module
 
-A KernelSU/Magisk-format flashable module that configures SUSFS root-hiding on
-tissot (KernelSU-Next, susfs **v2.1.0**). Flash it once via the KernelSU-Next
-manager (Modules → Install from storage) after each clean flash / data wipe.
+A KernelSU flashable module that configures SUSFS root-hiding.
+Flash once via KSU Manager → Modules → Install from storage.
 
-## What it does (at flash time, and every boot after)
-- Installs the susfs v2.1.0 CLI to `/data/adb/ksu/bin/ksu_susfs`.
-- Seeds `00-tissot-susfs-hide.sh` into `/data/adb/post-fs-data.d/` — KernelSU-Next
-  runs this on every boot (reliable on this non-GKI 4.9 build, where module
-  `post-fs-data.sh` may not run due to the 5.2+ mount syscalls returning ENOSYS).
-- The script: hides `/data/adb*` from non-root apps (`add_sus_path`) and enables
-  AVC-log spoofing. It does **not** spoof uname — the kernel build already cleans
-  uname/`/proc/version` natively (`.scmversion` + `KBUILD_BUILD_*` in the kernel
-  Makefile), so they look like a stock release with no cross-check mismatch.
+## What it does
+- Installs susfs v2.1.0 CLI + resetprop to /data/adb/ksu/bin/
+- Hides /data/adb/* from non-root apps (add_sus_path)
+- Spoofs AVC denial logs (enable_avc_log_spoofing)
+- Hides /sys/fs/selinux stat info (add_sus_kstat + update_sus_kstat)
+- Spoofs boot-state props (ro.boot.verifiedbootstate=green, etc.)
+- Deletes custom ROM version props (ro.modversion, ro.lineage.*)
+- Auto-runs every boot via post-fs-data.d
 
-## Build / rebuild the zip
-The prebuilt `tissot-susfs-hide.zip` is committed here. To rebuild after editing
-the script:
-
+## Rebuild
     cd device/xiaomi/tissot/susfs-hide-module
     rm -f tissot-susfs-hide.zip
     zip -r9 tissot-susfs-hide.zip . -x ".*" -x "tissot-susfs-hide.zip" -x "README.md"
 
 ## Notes
-- The `ksu_susfs_arm64` binary MUST match the kernel susfs version (v2.1.0). If
-  the kernel susfs version changes, replace it from the matching susfs4ksu
-  `ksu_module_susfs/tools/`.
-- sus_path only hides from app processes (uid>=10000) that are NOT granted root.
-  Test with a root-detector app that you have NOT given root to — not adb shell.
-- To customise hiding, edit `00-tissot-susfs-hide.sh`, rebuild the zip, reflash.
-  Full CLI help: `su -c /data/adb/ksu/bin/ksu_susfs` (no args).
+- sus_path/kstat only hide from app processes (uid>=10000, no root).
+  Test with a root-detector app NOT granted root — not adb shell.
+- ksu_susfs_arm64 must match kernel susfs version (v2.1.0).

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.qundev.fakelocation">
+    <application android:allowBackup="false" android:label="FakeLocation"
+        android:supportsRtl="true">
+        <activity android:name=".ConfigActivity" android:exported="true"
+            android:label="FakeLocation Config" />
+        <meta-data android:name="xposedmodule" android:value="true" />
+        <meta-data android:name="xposeddescription"
+            android:value="Fake fused location via hookAllMethods — no mock flag" />
+        <meta-data android:name="xposedminversion" android:value="93" />
+        <meta-data android:name="xposedscope" android:resource="@array/xposed_scope" />
+    </application>
+</manifest>
