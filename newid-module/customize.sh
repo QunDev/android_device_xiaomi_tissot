@@ -23,14 +23,14 @@ mkdir -p "$PFDD"
 cp "$MODPATH/05-tissot-newid.sh" "$PFDD/05-tissot-newid.sh"
 chmod 755 "$PFDD/05-tissot-newid.sh"
 
-# install the default complete device profile (Pixel 6 / oriole) unless the user
-# already has one (don't clobber custom edits)
-if [ -f "$CFG/profile.prop" ]; then
-  ui_print "- Keeping existing $CFG/profile.prop"
-else
-  ui_print "- Installing device profile -> $CFG/profile.prop (Pixel 6 / oriole)"
-  cp "$MODPATH/profile.prop" "$CFG/profile.prop"
-fi
+# Default = AUTO-SYNC: the boot script derives the global device identity from
+# PlayIntegrityFix's pif.prop, so global props always match PIF. We therefore do
+# NOT install a static profile.prop (that would override auto-sync). Ship it only
+# as an example for users who want to PIN a fixed device instead.
+cp "$MODPATH/profile.prop" "$CFG/profile.prop.example" 2>/dev/null
+ui_print "- Auto-sync ON: global device identity follows PlayIntegrityFix."
+ui_print "  (To pin a fixed device instead: rename $CFG/profile.prop.example"
+ui_print "   to profile.prop and edit it.)"
 
 chmod 755 "$MODPATH/action.sh"
 

@@ -22,18 +22,30 @@ KSU-Next manager → Modules → *tissot New Google Device ID* → **Action**:
 
 Then **reboot and sign in** → Google sees a new device.
 
-## Optional: appear as a specific model
-Create `/data/adb/tissot_newid/profile.prop` with `prop=value` lines, e.g.:
+## Device profile = AUTO-SYNC with PlayIntegrityFix (default)
+Every boot the script reads PIF's `pif.prop` and sets the **global** device
+identity (brand / manufacturer / model / device / name + all partition variants
++ all `*.build.fingerprint`) to **match whatever PIF feeds DroidGuard**. So if
+autopif changes the spoofed Pixel, the global props follow it automatically —
+no more global-vs-PlayIntegrity mismatch. The fingerprint is rebuilt with the
+**real ROM version (Android 13 / build TQ3A.230901.001)** so apps don't see a
+version mismatch; only brand/device/model track PIF. Also overrides
+`ro.product.*.name=lineage_tissot` (hides the LineageOS tell).
 
-```
-ro.product.model=Pixel 8
-ro.product.manufacturer=Google
-ro.product.brand=google
-```
+Left untouched on purpose: `ro.build.version.*` (release 13 / sdk 33 = real ROM)
+and `ro.hardware`/`ro.board.platform` (real SoC msm8953 — changing risks HALs).
 
-The boot script re-applies these every boot. Keep them **consistent with the
-fingerprint PIF/autopif sets**. Leave the file absent to NOT touch build props
-(safe default). Editing `ro.product.*` is the riskier part — test stability.
+### Pin a fixed device instead (manual override)
+If you want a FIXED device regardless of PIF, create
+`/data/adb/tissot_newid/profile.prop` (`prop=value` lines — see
+`profile.prop.example`). When present it **overrides** auto-sync. Keep all values
+consistent (fingerprint = `brand/product/device:release/id/incremental:type/tags`).
+
+### Caveats
+- autopif may pick a Pixel that never shipped Android 13 (e.g. Pixel 8) → a deep
+  check could spot "that model never ran A13". Prefer constraining autopif to
+  A13-era Pixels, or pin via profile.prop.
+- `ro.hardware=msm8953` vs a Pixel device is a deep-cross-check mismatch.
 
 ## Requirements / notes
 - Needs `resetprop` from the **tissot_susfs_hide** module (ships it). Install
