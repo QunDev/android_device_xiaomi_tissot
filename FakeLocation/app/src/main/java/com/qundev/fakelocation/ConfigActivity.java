@@ -48,6 +48,11 @@ public class ConfigActivity extends Activity {
         save.setText("Save & Apply"); save.setPadding(0, 24, 0, 0);
         save.setOnClickListener(v -> saveConfig());
         l.addView(save);
+
+        Button rnd = new Button(this);
+        rnd.setText("Random by IP (match proxy)");
+        rnd.setOnClickListener(v -> randomByIp());
+        l.addView(rnd);
         setContentView(l);
 
         // prefill from current prefs
@@ -61,6 +66,53 @@ public class ConfigActivity extends Activity {
         // MODE_PRIVATE + the xposedsharedprefs meta-data => LSPosed stores it
         // world-readable so the hook's XSharedPreferences can read it.
         return getSharedPreferences(PREFS, MODE_PRIVATE);
+    }
+
+    /**
+     * Look up the current public IP's location (goes through whatever proxy/VPN
+     * the device uses -> the proxy's IP -> its city), add a small random jitter
+     * so it's a natural random point near that city, fill the fields and save.
+     */
+    private void randomByIp() {
+        Toast.makeText(this, "Fetching IP location...", Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            try {
+                java.net.HttpURLConnection c = (java.net.HttpURLConnection)
+                        new java.net.URL("https://ipinfo.io/json").openConnection();
+                c.setConnectTimeout(8000);
+                c.setReadTimeout(8000);
+                c.setRequestProperty("Accept", "application/json");
+                java.io.BufferedReader r = new java.io.BufferedReader(
+                        new java.io.InputStreamReader(c.getInputStream()));
+                StringBuilder sb = new StringBuilder();
+                String ln;
+                while ((ln = r.readLine()) != null) sb.append(ln);
+                r.close();
+                org.json.JSONObject j = new org.json.JSONObject(sb.toString());
+                String[] loc = j.optString("loc", "").split(",");
+                if (loc.length < 2) throw new Exception("no loc in response");
+                final String ip = j.optString("ip", "?");
+                final String city = j.optString("city", "?") + ", " + j.optString("country", "?");
+                double lat = Double.parseDouble(loc[0]);
+                double lng = Double.parseDouble(loc[1]);
+                // jitter ~ up to ~2.5 km so it's a different natural point each time
+                java.util.Random rnd = new java.util.Random();
+                double R = 0.025;
+                lat += (rnd.nextDouble() - 0.5) * 2 * R;
+                lng += (rnd.nextDouble() - 0.5) * 2 * R;
+                final double flat = Math.round(lat * 1e6) / 1e6;
+                final double flng = Math.round(lng * 1e6) / 1e6;
+                runOnUiThread(() -> {
+                    mLat.setText(String.valueOf(flat));
+                    mLng.setText(String.valueOf(flng));
+                    Toast.makeText(this, "IP " + ip + " (" + city + ")", Toast.LENGTH_SHORT).show();
+                    saveConfig(); // auto-save + chmod
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(this,
+                        "IP lookup failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+            }
+        }).start();
     }
 
     private void saveConfig() {
