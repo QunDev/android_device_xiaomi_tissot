@@ -1,0 +1,6 @@
+id=tissot_newid
+name=tissot New Google Device ID
+version=v1.0.0-tissot
+versionCode=10000
+author=QunDev
+description=On-demand "become a new device for Google" tool. Tap Action to reset the Google device identity (clears GSF/GMS/Play data -> new GSF & Android ID on next checkin, randomizes serial, refreshes PIF fingerprint from Google via autopif). Signs you out of Google; reboot + re-login after, and Google registers a NEW device. Boot script re-applies the spoofed serial (+ optional device profile). Pair with PlayIntegrityFix(autopif)+TrickyStore; does NOT change ro.product.*.name by default. NOTE: same TrickyStore keybox => Google may still correlate via the attestation key.
