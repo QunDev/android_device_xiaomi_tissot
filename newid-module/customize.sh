@@ -23,6 +23,15 @@ mkdir -p "$PFDD"
 cp "$MODPATH/05-tissot-newid.sh" "$PFDD/05-tissot-newid.sh"
 chmod 755 "$PFDD/05-tissot-newid.sh"
 
+# install the default complete device profile (Pixel 6 / oriole) unless the user
+# already has one (don't clobber custom edits)
+if [ -f "$CFG/profile.prop" ]; then
+  ui_print "- Keeping existing $CFG/profile.prop"
+else
+  ui_print "- Installing device profile -> $CFG/profile.prop (Pixel 6 / oriole)"
+  cp "$MODPATH/profile.prop" "$CFG/profile.prop"
+fi
+
 chmod 755 "$MODPATH/action.sh"
 
 ui_print "- Installed."

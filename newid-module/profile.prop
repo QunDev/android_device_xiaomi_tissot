@@ -1,0 +1,51 @@
+# === Complete device profile: Pixel 6 (oriole) / Android 13 ===
+# Applied every boot by 05-tissot-newid.sh via `resetprop -n`. Consistent with
+# PIF MODEL=Pixel 6. Also overrides ro.product.*.name=lineage_tissot (hides the
+# LineageOS tell). ro.hardware/ro.board.platform are deliberately NOT changed
+# (real SoC = msm8953; changing them risks breaking HALs). ro.build.version.*
+# (release=13/sdk=33) kept = the real ROM so apps don't see a version mismatch.
+# security_patch is left as-is (recent, needed for Play Integrity STRONG); note
+# it won't match the 2023 base build id — a deep cross-check could spot that.
+# To use a different model, edit all values consistently (keep the fingerprint =
+# brand/product/device:release/id/incremental:type/tags).
+
+ro.product.brand=google
+ro.product.manufacturer=Google
+ro.product.model=Pixel 6
+ro.product.device=oriole
+ro.product.name=oriole
+ro.product.system.brand=google
+ro.product.system.manufacturer=Google
+ro.product.system.model=Pixel 6
+ro.product.system.device=oriole
+ro.product.system.name=oriole
+ro.product.vendor.brand=google
+ro.product.vendor.manufacturer=Google
+ro.product.vendor.model=Pixel 6
+ro.product.vendor.device=oriole
+ro.product.vendor.name=oriole
+ro.product.odm.brand=google
+ro.product.odm.manufacturer=Google
+ro.product.odm.model=Pixel 6
+ro.product.odm.device=oriole
+ro.product.odm.name=oriole
+ro.product.product.brand=google
+ro.product.product.manufacturer=Google
+ro.product.product.model=Pixel 6
+ro.product.product.device=oriole
+ro.product.product.name=oriole
+ro.product.system_ext.brand=google
+ro.product.system_ext.manufacturer=Google
+ro.product.system_ext.model=Pixel 6
+ro.product.system_ext.device=oriole
+ro.product.system_ext.name=oriole
+ro.build.product=oriole
+ro.build.flavor=oriole-user
+ro.build.fingerprint=google/oriole/oriole:13/TQ3A.230901.001/10750268:user/release-keys
+ro.build.description=oriole-user 13 TQ3A.230901.001 10750268 release-keys
+ro.system.build.fingerprint=google/oriole/oriole:13/TQ3A.230901.001/10750268:user/release-keys
+ro.vendor.build.fingerprint=google/oriole/oriole:13/TQ3A.230901.001/10750268:user/release-keys
+ro.product.build.fingerprint=google/oriole/oriole:13/TQ3A.230901.001/10750268:user/release-keys
+ro.odm.build.fingerprint=google/oriole/oriole:13/TQ3A.230901.001/10750268:user/release-keys
+ro.system_ext.build.fingerprint=google/oriole/oriole:13/TQ3A.230901.001/10750268:user/release-keys
+ro.bootimage.build.fingerprint=google/oriole/oriole:13/TQ3A.230901.001/10750268:user/release-keys
