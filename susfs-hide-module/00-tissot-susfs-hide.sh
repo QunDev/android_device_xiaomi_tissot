@@ -7,7 +7,7 @@ SUSFS=/data/adb/ksu/bin/ksu_susfs
 
 $SUSFS enable_log 0
 
-for p in /data/adb/ksu /data/adb/ksud /data/adb/modules /data/adb; do
+for p in /data/adb/ksu /data/adb/ksud /data/adb/modules /data/adb /system/addon.d; do
     [ -e "$p" ] && $SUSFS add_sus_path "$p"
 done
 
@@ -52,8 +52,15 @@ if [ -x "$RP" ]; then
     "$RP" -n ro.boot.vbmeta.device_state locked
     "$RP" -n ro.boot.veritymode enforcing
     "$RP" -n ro.build.tags release-keys
+    # Residual LineageOS tells (the "lineage_"/lineageos.org strings + the
+    # builder's hostname/username). Safe set only — does NOT touch
+    # ro.product.*.name (used widely; left as-is to avoid breakage).
+    "$RP" -n ro.build.host android-build
+    "$RP" -n ro.build.user android-build
+    "$RP" -n ro.build.flavor tissot-user
     for p in ro.modversion ro.lineage.version ro.lineage.releasetype \
-             ro.lineage.build.version ro.lineage.display.version; do
+             ro.lineage.build.version ro.lineage.display.version \
+             ro.lineagelegal.url ro.lineage.device; do
         "$RP" --delete "$p"
     done
 fi
