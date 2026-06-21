@@ -22,19 +22,20 @@ for so in /data/adb/modules/zygisk_lsposed/zygisk/arm64-v8a.so \
     [ -e "$so" ] && $SUSFS add_sus_map "$so"
 done
 
-# Block the SELinux policy ORACLE. app_zygote + webview_zygote ship with
-# selinuxfs:file read/write/open, which lets a detector spawn an app-zygote and
-# probe whether custom types exist (e.g. lsposed_file/zygisk_file/ksu_file) via
-# writes to /sys/fs/selinux/{context,access}. untrusted_app/isolated_app/priv_app
-# already lack this (stock neverallow); gmscore_app has read-only (can't probe).
-# Deny only these two zygotes (getattr is kept; gmscore_app untouched so GMS /
-# Play Integrity keep working). This hides lsposed_file/zygisk_file WITHOUT
-# removing them (which breaks LSPosed/ReZygisk — they need their own types).
+# Block the SELinux policy ORACLE. app_zygote ships with selinuxfs:file
+# read/write/open, which lets a detector spawn an app-zygote and probe whether
+# custom types exist (e.g. lsposed_file/zygisk_file/ksu_file) via writes to
+# /sys/fs/selinux/{context,access}. untrusted_app/isolated_app/priv_app already
+# lack this (stock neverallow); gmscore_app has read-only (can't probe).
+# NOTE: webview_zygote is intentionally NOT denied — denying it breaks the
+# WebView renderer used by the Google account sign-in flow ("checking info"
+# then fail). The detector uses app_zygote, so denying app_zygote alone blocks
+# the oracle while leaving Google login working. getattr kept; gmscore_app
+# untouched (GMS / Play Integrity keep working). Hides lsposed_file/zygisk_file
+# WITHOUT removing them (which breaks LSPosed/ReZygisk — they need their types).
 KSUD=/data/adb/ksud
 if [ -x "$KSUD" ]; then
-    for d in app_zygote webview_zygote; do
-        "$KSUD" sepolicy patch "deny $d selinuxfs file { read write open append ioctl lock map watch watch_reads }" 2>/dev/null
-    done
+    "$KSUD" sepolicy patch "deny app_zygote selinuxfs file { read write open append ioctl lock map watch watch_reads }" 2>/dev/null
 fi
 
 # Hide /sys/fs/selinux stat info from non-root apps (uid>=10000).
