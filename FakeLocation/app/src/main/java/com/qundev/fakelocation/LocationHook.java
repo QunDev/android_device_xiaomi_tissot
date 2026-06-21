@@ -124,9 +124,7 @@ public class LocationHook implements IXposedHookLoadPackage {
         // untrusted_app cannot read).
         try {
             XSharedPreferences prefs = new XSharedPreferences("com.qundev.fakelocation", "config");
-            prefs.makeWorldReadable();
-            String line = prefs.getString("loc", null);
-            if (parseLine(line)) return;
+            if (parseLine(prefs.getString("loc", null))) return;
         } catch (Throwable ignored) {}
         // Fallback: legacy /data/adb file (only works if the hooked process can
         // read it — e.g. a privileged scope; normal apps can't).

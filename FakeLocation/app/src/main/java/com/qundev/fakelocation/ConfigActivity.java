@@ -71,6 +71,15 @@ public class ConfigActivity extends Activity {
                 Toast.makeText(this, "Invalid", Toast.LENGTH_SHORT).show(); return;
             }
             prefs().edit().putString(KEY, lat + "," + lng).commit();
+            // LSPosed leaves the remote-prefs file 0660, so a hooked app running
+            // under a different uid can't read it via XSharedPreferences. Make it
+            // world-readable (this app has root via KSU).
+            try {
+                Process su = Runtime.getRuntime().exec("su");
+                java.io.OutputStream os = su.getOutputStream();
+                os.write("chmod 644 /data/misc/apexdata/*/prefs/com.qundev.fakelocation/config.xml 2>/dev/null\n".getBytes());
+                os.write("exit\n".getBytes()); os.flush(); su.waitFor(); os.close();
+            } catch (Exception ignored) {}
             Toast.makeText(this, "Saved (" + lat + "," + lng + "). Force-stop the target app.", Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
