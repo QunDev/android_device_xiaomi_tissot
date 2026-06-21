@@ -13,6 +13,30 @@ done
 
 $SUSFS enable_avc_log_spoofing 1
 
+# Hide the LSPosed zygisk agent .so from /proc/<pid>/[maps|smaps|mem|...] so apps
+# scanning their own memory map don't see a /data/adb/modules/* library. Requires
+# CONFIG_KSU_SUSFS_SUS_MAP=y + the task_mmu.c maps/smaps skip (tissot kernel patch).
+# ReZygisk's own libzygisk.so is already memfd-loaded (no file path in maps).
+for so in /data/adb/modules/zygisk_lsposed/zygisk/arm64-v8a.so \
+          /data/adb/modules/zygisk_lsposed/zygisk/armeabi-v7a.so; do
+    [ -e "$so" ] && $SUSFS add_sus_map "$so"
+done
+
+# Block the SELinux policy ORACLE. app_zygote + webview_zygote ship with
+# selinuxfs:file read/write/open, which lets a detector spawn an app-zygote and
+# probe whether custom types exist (e.g. lsposed_file/zygisk_file/ksu_file) via
+# writes to /sys/fs/selinux/{context,access}. untrusted_app/isolated_app/priv_app
+# already lack this (stock neverallow); gmscore_app has read-only (can't probe).
+# Deny only these two zygotes (getattr is kept; gmscore_app untouched so GMS /
+# Play Integrity keep working). This hides lsposed_file/zygisk_file WITHOUT
+# removing them (which breaks LSPosed/ReZygisk — they need their own types).
+KSUD=/data/adb/ksud
+if [ -x "$KSUD" ]; then
+    for d in app_zygote webview_zygote; do
+        "$KSUD" sepolicy patch "deny $d selinuxfs file { read write open append ioctl lock map watch watch_reads }" 2>/dev/null
+    done
+fi
+
 # Hide /sys/fs/selinux stat info from non-root apps (uid>=10000).
 # add_sus_kstat + update_sus_kstat only spoofs stat() — safe for boot.
 if [ -e /sys/fs/selinux ]; then
