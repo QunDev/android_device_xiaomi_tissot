@@ -1,17 +1,22 @@
 package com.qundev.fakelocation;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import java.io.*;
 
-/** Config UI: writes to /data/adb/fakelocation.conf via su */
+/**
+ * Config UI. Stores lat/lng in this app's SharedPreferences ("config"); the hook
+ * reads them via XSharedPreferences (works across SELinux because LSPosed bridges
+ * it — a /data/adb file is NOT readable by untrusted_app like Maps).
+ */
 public class ConfigActivity extends Activity {
-    private static final File CONFIG = new File("/data/adb/fakelocation.conf");
+    static final String PREFS = "config";
+    static final String KEY = "loc"; // "lat,lng[,accuracy[,altitude]]"
     private EditText mLat, mLng;
 
     @Override
@@ -45,17 +50,17 @@ public class ConfigActivity extends Activity {
         l.addView(save);
         setContentView(l);
 
-        try {
-            if (CONFIG.exists()) {
-                BufferedReader r = new BufferedReader(new FileReader(CONFIG));
-                String line = r.readLine(); r.close();
-                if (line != null) {
-                    String[] parts = line.trim().split(",");
-                    if (parts.length >= 2) { mLat.setText(parts[0].trim()); mLng.setText(parts[1].trim()); return; }
-                }
-            }
-        } catch (Exception ignored) {}
-        mLat.setText("10.8231"); mLng.setText("106.6297");
+        // prefill from current prefs
+        String cur = prefs().getString(KEY, "10.8231,106.6297");
+        String[] p = cur.split(",");
+        if (p.length >= 2) { mLat.setText(p[0].trim()); mLng.setText(p[1].trim()); }
+    }
+
+    @SuppressWarnings("deprecation")
+    private SharedPreferences prefs() {
+        // MODE_PRIVATE + the xposedsharedprefs meta-data => LSPosed stores it
+        // world-readable so the hook's XSharedPreferences can read it.
+        return getSharedPreferences(PREFS, MODE_PRIVATE);
     }
 
     private void saveConfig() {
@@ -65,11 +70,8 @@ public class ConfigActivity extends Activity {
             if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
                 Toast.makeText(this, "Invalid", Toast.LENGTH_SHORT).show(); return;
             }
-            Process su = Runtime.getRuntime().exec("su");
-            OutputStream os = su.getOutputStream();
-            os.write(("echo '" + lat + "," + lng + "' > " + CONFIG.getAbsolutePath() + " && chmod 644 " + CONFIG.getAbsolutePath() + "\n").getBytes());
-            os.write("exit\n".getBytes()); os.flush(); su.waitFor(); os.close();
-            Toast.makeText(this, "Saved. Force-stop target app.", Toast.LENGTH_LONG).show();
+            prefs().edit().putString(KEY, lat + "," + lng).commit();
+            Toast.makeText(this, "Saved (" + lat + "," + lng + "). Force-stop the target app.", Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }

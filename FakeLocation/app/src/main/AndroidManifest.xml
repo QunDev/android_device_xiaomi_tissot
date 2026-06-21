@@ -10,5 +10,8 @@
             android:value="Fake fused location via hookAllMethods — no mock flag" />
         <meta-data android:name="xposedminversion" android:value="93" />
         <meta-data android:name="xposedscope" android:resource="@array/xposed_scope" />
+        <!-- lets the hooked process read this app's prefs via XSharedPreferences
+             (a /data/adb file is unreadable by untrusted_app under SELinux) -->
+        <meta-data android:name="xposedsharedprefs" android:value="true" />
     </application>
 </manifest>

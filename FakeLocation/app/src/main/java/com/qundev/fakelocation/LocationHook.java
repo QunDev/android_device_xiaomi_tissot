@@ -11,6 +11,7 @@ import java.io.FileReader;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
@@ -118,23 +119,43 @@ public class LocationHook implements IXposedHookLoadPackage {
     }
 
     private void loadConfig() {
+        // Primary: XSharedPreferences (LSPosed bridges the module app's prefs to
+        // the hooked process; works across SELinux, unlike a /data/adb file which
+        // untrusted_app cannot read).
+        try {
+            XSharedPreferences prefs = new XSharedPreferences("com.qundev.fakelocation", "config");
+            prefs.makeWorldReadable();
+            String line = prefs.getString("loc", null);
+            if (parseLine(line)) return;
+        } catch (Throwable ignored) {}
+        // Fallback: legacy /data/adb file (only works if the hooked process can
+        // read it — e.g. a privileged scope; normal apps can't).
         try {
             if (!CONFIG_FILE.exists()) return;
             BufferedReader r = new BufferedReader(new FileReader(CONFIG_FILE));
             String line = r.readLine(); r.close();
-            if (line == null) return;
-            line = line.trim();
-            if (line.equalsIgnoreCase("off") || line.equalsIgnoreCase("disabled")) {
-                mEnabled = false; return;
-            }
+            parseLine(line);
+        } catch (Throwable ignored) {}
+    }
+
+    /** Parse "lat,lng[,accuracy[,altitude]]" or "off". Returns true if applied. */
+    private boolean parseLine(String line) {
+        if (line == null) return false;
+        line = line.trim();
+        if (line.isEmpty()) return false;
+        if (line.equalsIgnoreCase("off") || line.equalsIgnoreCase("disabled")) {
+            mEnabled = false; return true;
+        }
+        try {
             String[] parts = line.split(",");
             if (parts.length >= 2) {
                 mLat = Double.parseDouble(parts[0].trim());
                 mLng = Double.parseDouble(parts[1].trim());
-            }
+            } else return false;
             if (parts.length >= 3) mAccuracy = Float.parseFloat(parts[2].trim());
             if (parts.length >= 4) mAltitude = Double.parseDouble(parts[3].trim());
-        } catch (Throwable ignored) {}
+            return true;
+        } catch (Throwable t) { return false; }
     }
 
     private void log(String msg) {
