@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Suggested default scope. DO NOT add com.google.android.gms here: scoping
+         GMS injects the LSPosed agent into gms.unstable where DroidGuard runs ->
+         Play Integrity detection. Location.getLatitude() runs in the TARGET app's
+         process (even for FusedLocationProvider results), so scoping the target
+         app is enough. Add the apps you want to fake in the LSPosed manager. -->
     <string-array name="xposed_scope">
-        <item>com.google.android.gms</item>
         <item>com.google.android.apps.maps</item>
     </string-array>
 </resources>
