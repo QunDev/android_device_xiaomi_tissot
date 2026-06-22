@@ -69,35 +69,25 @@ public class ConfigActivity extends Activity {
     }
 
     /**
-     * Look up the current public IP's location (goes through whatever proxy/VPN
-     * the device uses -> the proxy's IP -> its city), add a small random jitter
-     * so it's a natural random point near that city, fill the fields and save.
+     * Look up the current public IP's location and set it (with jitter). Uses
+     * DoH (Cloudflare 1.1.1.1) + a direct TLS-by-IP connection so a network that
+     * HIJACKS DNS for IP-geo services (e.g. router returning 10.x for ipinfo.io)
+     * can't break it. Still respects a full VPN (all traffic incl. 1.1.1.1 is
+     * tunneled -> reports the VPN/proxy IP). Falls back to a normal request.
      */
     private void randomByIp() {
         Toast.makeText(this, "Fetching IP location...", Toast.LENGTH_SHORT).show();
         new Thread(() -> {
             try {
-                java.net.HttpURLConnection c = (java.net.HttpURLConnection)
-                        new java.net.URL("https://ipinfo.io/json").openConnection();
-                c.setConnectTimeout(8000);
-                c.setReadTimeout(8000);
-                c.setRequestProperty("Accept", "application/json");
-                java.io.BufferedReader r = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(c.getInputStream()));
-                StringBuilder sb = new StringBuilder();
-                String ln;
-                while ((ln = r.readLine()) != null) sb.append(ln);
-                r.close();
-                org.json.JSONObject j = new org.json.JSONObject(sb.toString());
+                org.json.JSONObject j = new org.json.JSONObject(fetchIpInfo());
                 String[] loc = j.optString("loc", "").split(",");
                 if (loc.length < 2) throw new Exception("no loc in response");
                 final String ip = j.optString("ip", "?");
                 final String city = j.optString("city", "?") + ", " + j.optString("country", "?");
                 double lat = Double.parseDouble(loc[0]);
                 double lng = Double.parseDouble(loc[1]);
-                // jitter ~ up to ~2.5 km so it's a different natural point each time
                 java.util.Random rnd = new java.util.Random();
-                double R = 0.025;
+                double R = 0.025; // ~2.5 km jitter
                 lat += (rnd.nextDouble() - 0.5) * 2 * R;
                 lng += (rnd.nextDouble() - 0.5) * 2 * R;
                 final double flat = Math.round(lat * 1e6) / 1e6;
@@ -106,13 +96,76 @@ public class ConfigActivity extends Activity {
                     mLat.setText(String.valueOf(flat));
                     mLng.setText(String.valueOf(flng));
                     Toast.makeText(this, "IP " + ip + " (" + city + ")", Toast.LENGTH_SHORT).show();
-                    saveConfig(); // auto-save + chmod
+                    saveConfig();
                 });
             } catch (Exception e) {
                 runOnUiThread(() -> Toast.makeText(this,
-                        "IP lookup failed: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                        "IP lookup failed: " + e, Toast.LENGTH_LONG).show());
             }
         }).start();
+    }
+
+    /** ipinfo.io/json via DoH + TLS-by-IP (bypass DNS hijack); fall back to normal. */
+    private String fetchIpInfo() throws Exception {
+        String host = "ipinfo.io";
+        Exception last;
+        try { return httpsGetByIp(dohResolve(host), host, "/json"); }
+        catch (Exception e) { last = e; }
+        try { // fallback: normal request (works on clean DNS / via VPN)
+            java.net.HttpURLConnection c = (java.net.HttpURLConnection)
+                    new java.net.URL("https://" + host + "/json").openConnection();
+            c.setConnectTimeout(8000); c.setReadTimeout(8000);
+            c.setRequestProperty("Accept", "application/json");
+            return readAll(c.getInputStream());
+        } catch (Exception e) { last = e; }
+        throw last;
+    }
+
+    /** Resolve A record over Cloudflare DoH — connects to IP 1.1.1.1 so the
+     *  local (hijacked) DNS server is never used. */
+    private String dohResolve(String host) throws Exception {
+        java.net.URL u = new java.net.URL("https://1.1.1.1/dns-query?name=" + host + "&type=A");
+        javax.net.ssl.HttpsURLConnection c = (javax.net.ssl.HttpsURLConnection) u.openConnection();
+        c.setRequestProperty("accept", "application/dns-json");
+        c.setConnectTimeout(8000); c.setReadTimeout(8000);
+        org.json.JSONObject j = new org.json.JSONObject(readAll(c.getInputStream()));
+        org.json.JSONArray ans = j.optJSONArray("Answer");
+        if (ans != null) for (int i = 0; i < ans.length(); i++) {
+            org.json.JSONObject a = ans.getJSONObject(i);
+            String d = a.optString("data", "");
+            if (a.optInt("type") == 1 && d.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) return d;
+        }
+        throw new Exception("DoH: no A record for " + host);
+    }
+
+    /** HTTPS GET to a specific IP with SNI=host (HTTP/1.0, read to close). */
+    private String httpsGetByIp(String ip, String host, String path) throws Exception {
+        javax.net.ssl.SSLSocketFactory f =
+                (javax.net.ssl.SSLSocketFactory) javax.net.ssl.SSLSocketFactory.getDefault();
+        javax.net.ssl.SSLSocket s = (javax.net.ssl.SSLSocket) f.createSocket();
+        s.connect(new java.net.InetSocketAddress(ip, 443), 8000);
+        s.setSoTimeout(8000);
+        javax.net.ssl.SSLParameters p = s.getSSLParameters();
+        p.setServerNames(java.util.Collections.singletonList(new javax.net.ssl.SNIHostName(host)));
+        s.setSSLParameters(p);
+        s.startHandshake();
+        if (!javax.net.ssl.HttpsURLConnection.getDefaultHostnameVerifier()
+                .verify(host, s.getSession())) throw new Exception("TLS hostname mismatch");
+        s.getOutputStream().write(("GET " + path + " HTTP/1.0\r\nHost: " + host
+                + "\r\nUser-Agent: curl/8\r\nAccept: application/json\r\nConnection: close\r\n\r\n").getBytes());
+        s.getOutputStream().flush();
+        String resp = readAll(s.getInputStream());
+        s.close();
+        int i = resp.indexOf("\r\n\r\n");
+        return i >= 0 ? resp.substring(i + 4) : resp;
+    }
+
+    private static String readAll(java.io.InputStream in) throws Exception {
+        java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+        byte[] buf = new byte[4096]; int n;
+        while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+        in.close();
+        return new String(bo.toByteArray(), "UTF-8");
     }
 
     private void saveConfig() {
