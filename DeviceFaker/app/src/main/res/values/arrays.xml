@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Add the apps you want to fake in the LSPosed manager. NEVER add
+         com.google.android.gms (would inject into DroidGuard -> Play Integrity). -->
+    <string-array name="xposed_scope" />
+</resources>
